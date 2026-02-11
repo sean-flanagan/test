@@ -1,0 +1,148 @@
+:root {
+  --bg: #04030f;
+  --panel: #121127;
+  --text: #e6f8ff;
+  --accent: #35f0ff;
+  --danger: #ff4d7a;
+  --glow: 0 0 20px rgba(53, 240, 255, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  color: var(--text);
+  font-family: Inter, Segoe UI, system-ui, sans-serif;
+  background:
+    radial-gradient(circle at 30% 20%, #1d1240 0%, transparent 35%),
+    radial-gradient(circle at 70% 80%, #102844 0%, transparent 40%),
+    var(--bg);
+}
+
+.app {
+  width: min(92vw, 720px);
+  background: linear-gradient(160deg, rgba(19, 18, 42, 0.94), rgba(6, 12, 24, 0.92));
+  border: 1px solid rgba(132, 188, 255, 0.2);
+  border-radius: 18px;
+  padding: 1.1rem;
+  box-shadow: 0 30px 50px rgba(0, 0, 0, 0.35);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 1rem + 2vw, 2.1rem);
+}
+
+header p {
+  margin: 0.4rem 0 0;
+  color: #b2d8e7;
+}
+
+.hud {
+  margin: 1rem 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.stat {
+  border: 1px solid rgba(115, 167, 219, 0.24);
+  border-radius: 12px;
+  padding: 0.6rem;
+  background: rgba(11, 21, 38, 0.75);
+}
+
+.stat span {
+  display: block;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9cc0d5;
+}
+
+.stat strong {
+  font-size: 1.22rem;
+}
+
+.game-shell {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--glow);
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #090e1c;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: linear-gradient(180deg, rgba(5, 7, 17, 0.42), rgba(5, 7, 17, 0.78));
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.overlay h2 {
+  margin: 0;
+}
+
+.overlay p {
+  margin: 0;
+  max-width: 44ch;
+  color: #cce8f5;
+}
+
+button {
+  justify-self: center;
+  border: none;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.7rem 1.2rem;
+  color: #072232;
+  background: linear-gradient(120deg, #50ffe5, #1ad4ff);
+  cursor: pointer;
+  box-shadow: var(--glow);
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+footer {
+  margin-top: 0.8rem;
+  font-size: 0.92rem;
+  color: #99bfd6;
+}
+
+kbd {
+  margin-inline: 0.15rem;
+  border: 1px solid rgba(179, 218, 242, 0.4);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 0 0.28rem;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 620px) {
+  .hud {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
