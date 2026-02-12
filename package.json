@@ -1,0 +1,9 @@
+{
+  "name": "neon-snake-arena",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Preview-friendly static server for Neon Snake Arena",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
