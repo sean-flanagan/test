@@ -1,101 +1,99 @@
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
 
-const scoreEl = document.querySelector("#score");
-const bestEl = document.querySelector("#best");
-const speedEl = document.querySelector("#speed");
-const comboEl = document.querySelector("#combo");
+const playerScoreEl = document.querySelector("#player-score");
+const cpuScoreEl = document.querySelector("#cpu-score");
+const statusEl = document.querySelector("#status");
 const overlay = document.querySelector("#overlay");
 const overlayTitle = document.querySelector("#overlay-title");
 const overlayText = document.querySelector("#overlay-text");
 const startBtn = document.querySelector("#start-btn");
 
-const gridSize = 20;
-const tileCount = canvas.width / gridSize;
+const paddle = { width: 14, height: 96, speed: 7 };
+const ball = { size: 14, baseSpeed: 6.2, maxSpeed: 12 };
+const maxScore = 7;
 
-const dirMap = {
-  ArrowUp: { x: 0, y: -1 },
-  ArrowDown: { x: 0, y: 1 },
-  ArrowLeft: { x: -1, y: 0 },
-  ArrowRight: { x: 1, y: 0 },
-  w: { x: 0, y: -1 },
-  s: { x: 0, y: 1 },
-  a: { x: -1, y: 0 },
-  d: { x: 1, y: 0 }
-};
-
-let snake;
-let direction;
-let pendingDirection;
-let food;
 let gameState;
-let score;
-let combo;
-let best;
-let speedLevel;
-let lastFoodTime;
-let tickTimer;
-
-const baseTick = 120;
+let playerY;
+let cpuY;
+let ballX;
+let ballY;
+let ballVX;
+let ballVY;
+let playerScore;
+let cpuScore;
+let upPressed;
+let downPressed;
+let winner;
 
 init();
-startBtn.addEventListener("click", () => {
-  if (gameState === "ready" || gameState === "dead") {
-    startRound();
-  } else if (gameState === "paused") {
-    resume();
-  }
-});
-
+startBtn.addEventListener("click", onStartButton);
 document.addEventListener("keydown", onKeyDown);
+document.addEventListener("keyup", onKeyUp);
 
 function init() {
-  best = Number(localStorage.getItem("neonSnakeBest") || 0);
-  bestEl.textContent = String(best);
-  reset();
+  resetMatch();
   render();
 }
 
-function reset() {
-  snake = [
-    { x: 8, y: 13 },
-    { x: 7, y: 13 },
-    { x: 6, y: 13 }
-  ];
-  direction = { x: 1, y: 0 };
-  pendingDirection = direction;
-  food = randomOpenTile();
-  score = 0;
-  combo = 0;
-  speedLevel = 1;
-  lastFoodTime = performance.now();
+function resetMatch() {
+  playerScore = 0;
+  cpuScore = 0;
+  winner = null;
+  resetPositions();
   gameState = "ready";
-  clearTimeout(tickTimer);
   updateHud();
-  showOverlay("Press Space to Start", "Use Arrow keys or WASD. Eat quickly to build combo and speed.", "Start Game");
+  showOverlay("Press Space to Start", "Move with W/S or Arrow keys. First to 7 wins.", "Start Match");
+}
+
+function resetPositions(direction = Math.random() > 0.5 ? 1 : -1) {
+  playerY = canvas.height / 2 - paddle.height / 2;
+  cpuY = canvas.height / 2 - paddle.height / 2;
+  ballX = canvas.width / 2 - ball.size / 2;
+  ballY = canvas.height / 2 - ball.size / 2;
+
+  const launchAngle = (Math.random() * 0.8 - 0.4) * Math.PI;
+  ballVX = Math.cos(launchAngle) * ball.baseSpeed * direction;
+  ballVY = Math.sin(launchAngle) * ball.baseSpeed;
+
+  upPressed = false;
+  downPressed = false;
+}
+
+function onStartButton() {
+  if (gameState === "ready") {
+    startRound();
+  } else if (gameState === "paused") {
+    resume();
+  } else if (gameState === "won") {
+    resetMatch();
+    startRound();
+  }
 }
 
 function startRound() {
-  if (gameState === "dead") {
-    reset();
+  if (gameState === "won") {
+    resetMatch();
   }
   gameState = "running";
   hideOverlay();
-  scheduleTick();
+  updateHud();
+  requestAnimationFrame(loop);
 }
 
 function pause() {
   if (gameState !== "running") return;
   gameState = "paused";
-  clearTimeout(tickTimer);
-  showOverlay("Paused", "Press Space or click resume to jump back in.", "Resume");
+  updateHud();
+  showOverlay("Paused", "Press Space or click resume to continue.", "Resume");
 }
 
 function resume() {
   if (gameState !== "paused") return;
   gameState = "running";
   hideOverlay();
-  scheduleTick();
+  updateHud();
+  requestAnimationFrame(loop);
 }
 
 function onKeyDown(event) {
@@ -104,204 +102,163 @@ function onKeyDown(event) {
   if (key === " " || key === "Spacebar") {
     event.preventDefault();
     if (gameState === "running") pause();
-    else if (gameState === "paused" || gameState === "ready") startRound();
-    else if (gameState === "dead") startRound();
+    else if (gameState === "paused") resume();
+    else if (gameState === "ready" || gameState === "won") startRound();
     return;
   }
 
   if (key === "r") {
-    reset();
+    resetMatch();
     return;
   }
 
-  if (gameState !== "running") return;
-  if (!dirMap[key]) return;
-
-  const nextDir = dirMap[key];
-  if (nextDir.x === -direction.x && nextDir.y === -direction.y) {
-    return;
-  }
-
-  pendingDirection = nextDir;
+  if (key === "w" || key === "ArrowUp") upPressed = true;
+  if (key === "s" || key === "ArrowDown") downPressed = true;
 }
 
-function scheduleTick() {
-  const interval = Math.max(baseTick - (speedLevel - 1) * 10, 55);
-  tickTimer = setTimeout(tick, interval);
+function onKeyUp(event) {
+  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  if (key === "w" || key === "ArrowUp") upPressed = false;
+  if (key === "s" || key === "ArrowDown") downPressed = false;
 }
 
-function tick() {
+function loop() {
   if (gameState !== "running") return;
-
-  direction = pendingDirection;
-  const head = snake[0];
-  const nextHead = {
-    x: head.x + direction.x,
-    y: head.y + direction.y
-  };
-
-  if (hitsWall(nextHead) || hitsSelf(nextHead)) {
-    return gameOver();
-  }
-
-  snake.unshift(nextHead);
-
-  if (nextHead.x === food.x && nextHead.y === food.y) {
-    const now = performance.now();
-    const elapsed = now - lastFoodTime;
-
-    combo = elapsed < 1900 ? combo + 1 : 1;
-    const gained = 10 + Math.min(combo * 2, 30);
-    score += gained;
-
-    speedLevel = 1 + Math.min(Math.floor(score / 60), 8);
-    lastFoodTime = now;
-    food = randomOpenTile();
-
-    if (score > best) {
-      best = score;
-      localStorage.setItem("neonSnakeBest", String(best));
-    }
-  } else {
-    snake.pop();
-    if (combo > 0) combo = Math.max(combo - 0.07, 0);
-  }
-
-  updateHud();
+  update();
   render();
-  scheduleTick();
+  requestAnimationFrame(loop);
 }
 
-function hitsWall(node) {
-  return node.x < 0 || node.y < 0 || node.x >= tileCount || node.y >= tileCount;
+function update() {
+  if (upPressed) playerY -= paddle.speed;
+  if (downPressed) playerY += paddle.speed;
+  playerY = clamp(playerY, 0, canvas.height - paddle.height);
+
+  const cpuCenter = cpuY + paddle.height / 2;
+  const targetY = ballY + ball.size / 2;
+  const cpuStep = 5.6;
+  if (cpuCenter < targetY - 10) cpuY += cpuStep;
+  if (cpuCenter > targetY + 10) cpuY -= cpuStep;
+  cpuY = clamp(cpuY, 0, canvas.height - paddle.height);
+
+  ballX += ballVX;
+  ballY += ballVY;
+
+  if (ballY <= 0 || ballY + ball.size >= canvas.height) {
+    ballY = clamp(ballY, 0, canvas.height - ball.size);
+    ballVY *= -1;
+  }
+
+  const playerRect = { x: 28, y: playerY, width: paddle.width, height: paddle.height };
+  const cpuRect = { x: canvas.width - 28 - paddle.width, y: cpuY, width: paddle.width, height: paddle.height };
+  const ballRect = { x: ballX, y: ballY, width: ball.size, height: ball.size };
+
+  if (intersects(ballRect, playerRect) && ballVX < 0) {
+    bounceFromPaddle(playerRect, 1);
+  } else if (intersects(ballRect, cpuRect) && ballVX > 0) {
+    bounceFromPaddle(cpuRect, -1);
+  }
+
+  if (ballX + ball.size < 0) {
+    cpuScore += 1;
+    onPoint(-1);
+  } else if (ballX > canvas.width) {
+    playerScore += 1;
+    onPoint(1);
+  }
 }
 
-function hitsSelf(node) {
-  return snake.some((segment) => segment.x === node.x && segment.y === node.y);
+function bounceFromPaddle(paddleRect, directionSign) {
+  const relative = (ballY + ball.size / 2 - (paddleRect.y + paddleRect.height / 2)) / (paddleRect.height / 2);
+  const bounceAngle = relative * (Math.PI / 3);
+
+  const speed = Math.min(Math.hypot(ballVX, ballVY) + 0.28, ball.maxSpeed);
+  ballVX = Math.cos(bounceAngle) * speed * directionSign;
+  ballVY = Math.sin(bounceAngle) * speed;
+
+  if (directionSign > 0) {
+    ballX = paddleRect.x + paddleRect.width;
+  } else {
+    ballX = paddleRect.x - ball.size;
+  }
 }
 
-function randomOpenTile() {
-  const occupied = new Set(snake?.map((s) => `${s.x},${s.y}`));
-  let pick;
-  do {
-    pick = {
-      x: Math.floor(Math.random() * tileCount),
-      y: Math.floor(Math.random() * tileCount)
-    };
-  } while (occupied.has(`${pick.x},${pick.y}`));
-  return pick;
-}
+function onPoint(lastDirection) {
+  updateHud();
+  if (playerScore >= maxScore || cpuScore >= maxScore) {
+    winner = playerScore > cpuScore ? "You" : "CPU";
+    gameState = "won";
+    updateHud();
+    showOverlay(`${winner} Win!`, "Press R for a fresh match or Space to play again.", "Play Again");
+    return;
+  }
 
-function gameOver() {
-  gameState = "dead";
-  clearTimeout(tickTimer);
-  showOverlay("Game Over", `You scored ${score} points. Press Space to run it back.`, "Play Again");
+  resetPositions(-lastDirection);
 }
 
 function updateHud() {
-  scoreEl.textContent = String(score);
-  bestEl.textContent = String(best);
-  speedEl.textContent = `${speedLevel}x`;
-  comboEl.textContent = String(Math.floor(combo));
-}
+  playerScoreEl.textContent = String(playerScore);
+  cpuScoreEl.textContent = String(cpuScore);
 
-function drawGrid() {
-  ctx.fillStyle = "#070b18";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.strokeStyle = "rgba(120, 180, 245, 0.08)";
-  ctx.lineWidth = 1;
-  for (let i = 1; i < tileCount; i += 1) {
-    const pos = i * gridSize;
-    ctx.beginPath();
-    ctx.moveTo(pos, 0);
-    ctx.lineTo(pos, canvas.height);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, pos);
-    ctx.lineTo(canvas.width, pos);
-    ctx.stroke();
-  }
-}
-
-function drawFood() {
-  const x = food.x * gridSize + gridSize / 2;
-  const y = food.y * gridSize + gridSize / 2;
-
-  const pulse = (Math.sin(performance.now() / 160) + 1) / 2;
-  const radius = gridSize * (0.25 + pulse * 0.08);
-
-  ctx.beginPath();
-  ctx.fillStyle = "rgba(43, 236, 255, 0.95)";
-  ctx.shadowColor = "rgba(43, 236, 255, 0.8)";
-  ctx.shadowBlur = 16;
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.shadowBlur = 0;
-}
-
-function drawSnake() {
-  snake.forEach((segment, index) => {
-    const progress = 1 - index / (snake.length + 1);
-    const hue = 160 + progress * 45;
-    ctx.fillStyle = `hsl(${hue}, 95%, ${40 + progress * 25}%)`;
-
-    const pad = index === 0 ? 2 : 3;
-    const size = gridSize - pad * 2;
-    const x = segment.x * gridSize + pad;
-    const y = segment.y * gridSize + pad;
-
-    ctx.beginPath();
-    ctx.roundRect(x, y, size, size, 5);
-    ctx.fill();
-
-    if (index === 0) {
-      drawEyes(segment, x, y, size);
-    }
-  });
-}
-
-function drawEyes(segment, x, y, size) {
-  const eyeOffset = 5;
-  let eye1 = { x: x + eyeOffset, y: y + eyeOffset };
-  let eye2 = { x: x + size - eyeOffset, y: y + eyeOffset };
-
-  if (direction.x === -1) {
-    eye1 = { x: x + eyeOffset, y: y + eyeOffset };
-    eye2 = { x: x + eyeOffset, y: y + size - eyeOffset };
-  }
-
-  if (direction.x === 1) {
-    eye1 = { x: x + size - eyeOffset, y: y + eyeOffset };
-    eye2 = { x: x + size - eyeOffset, y: y + size - eyeOffset };
-  }
-
-  if (direction.y === 1) {
-    eye1 = { x: x + eyeOffset, y: y + size - eyeOffset };
-    eye2 = { x: x + size - eyeOffset, y: y + size - eyeOffset };
-  }
-
-  if (direction.y === -1) {
-    eye1 = { x: x + eyeOffset, y: y + eyeOffset };
-    eye2 = { x: x + size - eyeOffset, y: y + eyeOffset };
-  }
-
-  [eye1, eye2].forEach((eye) => {
-    ctx.beginPath();
-    ctx.fillStyle = "#001a20";
-    ctx.arc(eye.x, eye.y, 2.1, 0, Math.PI * 2);
-    ctx.fill();
-  });
+  if (gameState === "running") statusEl.textContent = "Playing";
+  else if (gameState === "paused") statusEl.textContent = "Paused";
+  else if (gameState === "won") statusEl.textContent = `${winner} won`;
+  else statusEl.textContent = "Ready";
 }
 
 function render() {
-  drawGrid();
-  drawFood();
-  drawSnake();
-  if (gameState === "running") {
-    requestAnimationFrame(render);
-  }
+  drawCourt();
+  drawPaddles();
+  drawBall();
+}
+
+function drawCourt() {
+  ctx.fillStyle = "#070b18";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "rgba(120, 180, 245, 0.25)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+  ctx.setLineDash([10, 12]);
+  ctx.strokeStyle = "rgba(154, 211, 255, 0.35)";
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / 2, 0);
+  ctx.lineTo(canvas.width / 2, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.beginPath();
+  ctx.arc(canvas.width / 2, canvas.height / 2, 64, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(154, 211, 255, 0.22)";
+  ctx.stroke();
+}
+
+function drawPaddles() {
+  drawNeonRect(28, playerY, paddle.width, paddle.height, "rgba(80, 255, 226, 0.95)");
+  drawNeonRect(canvas.width - 28 - paddle.width, cpuY, paddle.width, paddle.height, "rgba(255, 106, 210, 0.95)");
+}
+
+function drawBall() {
+  drawNeonRect(ballX, ballY, ball.size, ball.size, "rgba(44, 238, 255, 0.95)", 11);
+}
+
+function drawNeonRect(x, y, w, h, color, radius = 7) {
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 16;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, radius);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function intersects(a, b) {
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
 function showOverlay(title, text, buttonLabel) {

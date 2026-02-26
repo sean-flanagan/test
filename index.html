@@ -3,48 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Neon Snake Arena</title>
+  <title>Neon Pong Duel</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main class="app">
     <header>
-      <h1>🐍 Neon Snake Arena</h1>
-      <p>Eat energy orbs, chain combos, and survive as long as you can.</p>
+      <h1>🏓 Neon Pong Duel</h1>
+      <p>Defend your side, outplay the AI, and reach 7 points first.</p>
     </header>
 
     <section class="hud" aria-label="Game stats">
       <div class="stat">
-        <span>Score</span>
-        <strong id="score">0</strong>
+        <span>You</span>
+        <strong id="player-score">0</strong>
       </div>
       <div class="stat">
-        <span>Best</span>
-        <strong id="best">0</strong>
+        <span>CPU</span>
+        <strong id="cpu-score">0</strong>
       </div>
       <div class="stat">
-        <span>Speed</span>
-        <strong id="speed">1x</strong>
-      </div>
-      <div class="stat">
-        <span>Combo</span>
-        <strong id="combo">0</strong>
+        <span>Status</span>
+        <strong id="status">Ready</strong>
       </div>
     </section>
 
     <section class="game-shell">
-      <canvas id="game" width="520" height="520" aria-label="Snake game board"></canvas>
+      <canvas id="game" width="880" height="520" aria-label="Pong game board"></canvas>
       <div id="overlay" class="overlay">
         <h2 id="overlay-title">Press Space to Start</h2>
-        <p id="overlay-text">Use Arrow keys or WASD to move. Grab cyan orbs and avoid walls and yourself.</p>
-        <button id="start-btn">Start Game</button>
+        <p id="overlay-text">Move with W/S or Arrow keys. First to 7 wins.</p>
+        <button id="start-btn">Start Match</button>
       </div>
     </section>
 
     <footer>
       <p>
-        Controls: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> ·
-        <kbd>Space</kbd> pause/start · <kbd>R</kbd> restart
+        Controls: <kbd>W</kbd><kbd>S</kbd> or <kbd>↑</kbd><kbd>↓</kbd> · <kbd>Space</kbd> pause/start · <kbd>R</kbd> new match
       </p>
     </footer>
   </main>
