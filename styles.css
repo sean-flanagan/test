@@ -3,7 +3,6 @@
   --panel: #121127;
   --text: #e6f8ff;
   --accent: #35f0ff;
-  --danger: #ff4d7a;
   --glow: 0 0 20px rgba(53, 240, 255, 0.35);
 }
 
@@ -26,7 +25,7 @@ body {
 }
 
 .app {
-  width: min(92vw, 720px);
+  width: min(95vw, 1020px);
   background: linear-gradient(160deg, rgba(19, 18, 42, 0.94), rgba(6, 12, 24, 0.92));
   border: 1px solid rgba(132, 188, 255, 0.2);
   border-radius: 18px;
@@ -47,7 +46,7 @@ header p {
 .hud {
   margin: 1rem 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.6rem;
 }
 
@@ -99,12 +98,12 @@ canvas {
   display: none;
 }
 
-.overlay h2 {
+.overlay h2,
+.overlay p {
   margin: 0;
 }
 
 .overlay p {
-  margin: 0;
   max-width: 44ch;
   color: #cce8f5;
 }
@@ -143,6 +142,6 @@ kbd {
 
 @media (max-width: 620px) {
   .hud {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 }

@@ -1,18 +1,16 @@
-# Neon Snake Arena
+# Neon Pong Duel
 
-A stylish browser-based snake game with combo scoring, speed ramping, and a glowing neon UI.
+A neon-styled browser Pong game where you control the left paddle and face an AI opponent.
 
 ## Features
 
-- Responsive game board rendered on a `<canvas>`.
-- Keyboard controls (`WASD` or arrow keys).
-- Combo scoring when you chain quick food pickups.
-- Increasing speed as score grows.
-- Pause, restart, and persistent best score (via `localStorage`).
+- Smooth canvas-based Pong gameplay.
+- Player paddle controls with keyboard support.
+- AI paddle that tracks the ball with capped speed.
+- Score tracking with win state and quick restart.
+- Pause/resume and new match controls.
 
 ## Run locally
-
-Because this is a static app, any simple HTTP server works:
 
 ```bash
 python3 -m http.server 8000
@@ -22,6 +20,6 @@ Then open [http://localhost:8000](http://localhost:8000).
 
 ## Controls
 
-- Move: `W`, `A`, `S`, `D` or arrow keys
+- Move paddle up/down: `W` / `S` or `↑` / `↓`
 - Pause/Resume/Start: `Space`
-- Restart: `R`
+- New match: `R`
